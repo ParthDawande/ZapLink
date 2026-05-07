@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
+import LinkDetailPage from './pages/LinkDetailPage'
 
 function RootRedirect() {
   const { isAuthenticated } = useAuth()
@@ -20,6 +21,8 @@ export default function App() {
         element={<ProtectedRoute requireAuth={false}><RegisterPage /></ProtectedRoute>} />
       <Route path="/dashboard"
         element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/links/:id"
+        element={<ProtectedRoute><LinkDetailPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

@@ -66,7 +66,8 @@ public class RedirectController {
 
         Link link = optLink.get();
 
-        // 3. Soft-deleted → treat as not found (don't reveal the link existed)
+        // 3. Soft-deleted → treat as not found (don't reveal the link existed).
+        // Belt-and-suspenders: @SQLRestriction also filters this, but explicit check makes the intent clear.
         if (link.getDeletedAt() != null) {
             return ResponseEntity.notFound().build();
         }
