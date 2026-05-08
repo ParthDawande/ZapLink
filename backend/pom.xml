@@ -94,6 +94,42 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Bucket4j — in-memory per-user/per-IP rate limiting -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
+        <!-- Awaitility — polling assertions for async behaviour in tests -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Thymeleaf — server-side HTML templates for the redirect error pages (404 / 410) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- WebFlux — provides WebClient for non-blocking HTTP calls (Safe Browsing API).
+             spring-boot-starter-web (Tomcat) takes precedence as the server; Netty is
+             client-only here. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- OkHttp MockWebServer — used by SafeBrowsingServiceTest to mock HTTP responses
+             without a live network connection. Version managed by Spring Boot BOM. -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

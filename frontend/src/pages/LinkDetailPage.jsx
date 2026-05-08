@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import ClickChart from '../components/ClickChart'
 
 function StatusBadge({ status }) {
   const cls = { active: 'bg-success', expired: 'bg-secondary', disabled: 'bg-danger' }
@@ -16,18 +17,29 @@ export default function LinkDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [link, setLink]       = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
-  const [error, setError]     = useState('')
-  const [copied, setCopied]   = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const [link, setLink]           = useState(null)
+  const [analytics, setAnalytics] = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [notFound, setNotFound]   = useState(false)
+  const [error, setError]         = useState('')
+  const [copied, setCopied]       = useState(false)
+  const [deleting, setDeleting]   = useState(false)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    api.get(`/api/links/${id}`)
-      .then(({ data }) => { if (!cancelled) setLink(data) })
+    setError('')
+
+    Promise.all([
+      api.get(`/api/links/${id}`),
+      api.get(`/api/links/${id}/analytics`),
+    ])
+      .then(([linkRes, analyticsRes]) => {
+        if (!cancelled) {
+          setLink(linkRes.data)
+          setAnalytics(analyticsRes.data)
+        }
+      })
       .catch(err => {
         if (!cancelled) {
           if (err.response?.status === 404) {
@@ -38,6 +50,7 @@ export default function LinkDetailPage() {
         }
       })
       .finally(() => { if (!cancelled) setLoading(false) })
+
     return () => { cancelled = true }
   }, [id])
 
@@ -72,7 +85,7 @@ export default function LinkDetailPage() {
 
   if (notFound) {
     return (
-      <div className="container mt-5" style={{ maxWidth: '600px' }}>
+      <div className="container mt-5" style={{ maxWidth: '700px' }}>
         <div className="alert alert-warning" role="alert">Link not found.</div>
         <button className="btn btn-outline-secondary" onClick={() => navigate('/dashboard')}>
           ← Back to Dashboard
@@ -83,7 +96,7 @@ export default function LinkDetailPage() {
 
   if (error && !link) {
     return (
-      <div className="container mt-5" style={{ maxWidth: '600px' }}>
+      <div className="container mt-5" style={{ maxWidth: '700px' }}>
         <div className="alert alert-danger" role="alert">{error}</div>
         <button className="btn btn-outline-secondary" onClick={() => navigate('/dashboard')}>
           ← Back to Dashboard
@@ -93,7 +106,8 @@ export default function LinkDetailPage() {
   }
 
   return (
-    <div className="container mt-5" style={{ maxWidth: '640px' }}>
+    <div className="container mt-5" style={{ maxWidth: '760px' }}>
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">Link Details</h2>
         <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate('/dashboard')}>
@@ -105,6 +119,49 @@ export default function LinkDetailPage() {
         <div className="alert alert-danger" role="alert">{error}</div>
       )}
 
+      {/* Stat cards */}
+      {analytics && (
+        <div className="row g-3 mb-4">
+          <div className="col-4">
+            <div className="card text-center h-100">
+              <div className="card-body py-3">
+                <div className="fs-2 fw-bold text-primary">{analytics.totalClicks}</div>
+                <div className="text-muted small">Total Clicks</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-4">
+            <div className="card text-center h-100">
+              <div className="card-body py-3">
+                <div className="fs-2 fw-bold text-primary">{analytics.last30DaysClicks}</div>
+                <div className="text-muted small">Last 30 Days</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-4">
+            <div className="card text-center h-100">
+              <div className="card-body py-3">
+                <div className="fs-2 fw-bold">
+                  <StatusBadge status={link.status} />
+                </div>
+                <div className="text-muted small mt-1">Status</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chart */}
+      {analytics && (
+        <div className="card mb-4">
+          <div className="card-body">
+            <h6 className="card-title text-muted mb-3">Clicks — last 30 days</h6>
+            <ClickChart dailyClicks={analytics.dailyClicks} />
+          </div>
+        </div>
+      )}
+
+      {/* Link details */}
       <div className="card">
         <div className="card-body">
           <dl className="row mb-0">
@@ -124,12 +181,6 @@ export default function LinkDetailPage() {
             <dd className="col-sm-8 text-break">
               <a href={link.longUrl} target="_blank" rel="noreferrer">{link.longUrl}</a>
             </dd>
-
-            <dt className="col-sm-4">Status</dt>
-            <dd className="col-sm-8"><StatusBadge status={link.status} /></dd>
-
-            <dt className="col-sm-4">Clicks</dt>
-            <dd className="col-sm-8">{link.clickCount}</dd>
 
             <dt className="col-sm-4">Created</dt>
             <dd className="col-sm-8">{formatDate(link.createdAt)}</dd>

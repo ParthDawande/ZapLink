@@ -1,5 +1,6 @@
 package com.zaplink.controller;
 
+import com.zaplink.dto.AnalyticsResponse;
 import com.zaplink.dto.CreateLinkRequest;
 import com.zaplink.dto.CreateLinkResult;
 import com.zaplink.dto.LinkResponse;
@@ -49,6 +50,14 @@ public class LinkController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(linkService.getLinkForUser(principal.userId(), id));
+    }
+
+    @GetMapping("/{id}/analytics")
+    public ResponseEntity<AnalyticsResponse> getAnalytics(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(linkService.getAnalyticsForUser(principal.userId(), id));
     }
 
     @GetMapping

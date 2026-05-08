@@ -209,7 +209,12 @@ export default function DashboardPage() {
                         {truncate(link.longUrl)}
                       </span>
                     </td>
-                    <td>{link.clickCount}</td>
+                    <td
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/links/${link.id}`)}
+                      title="View analytics">
+                      {link.clickCount}
+                    </td>
                     <td><StatusBadge status={link.status} /></td>
                     <td className="text-nowrap">{formatDate(link.createdAt)}</td>
                     <td>

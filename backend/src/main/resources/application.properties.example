@@ -16,13 +16,25 @@ spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
 jwt.secret=REPLACE_WITH_A_LONG_RANDOM_STRING_AT_LEAST_32_CHARS
 jwt.expiration-ms=86400000
 
-# === Rate Limiting (Bucket4j) ===
-zaplink.ratelimit.capacity=20
-zaplink.ratelimit.refill-tokens=20
-zaplink.ratelimit.refill-duration-minutes=1
+# === Rate Limiting (Bucket4j — in-memory, per-user / per-IP) ===
+# POST /api/links — main abuse vector; keyed by userId
+ratelimit.create-link.capacity=30
+ratelimit.create-link.refill-period-seconds=60
+# POST /api/auth/register — account-creation abuse; keyed by IP
+ratelimit.register.capacity=5
+ratelimit.register.refill-period-seconds=60
+# POST /api/auth/login — credential-stuffing defence; keyed by IP
+ratelimit.login.capacity=10
+ratelimit.login.refill-period-seconds=60
+# all other /api/* — generous default; keyed by userId
+ratelimit.default.capacity=120
+ratelimit.default.refill-period-seconds=60
 
 # === Google Safe Browsing ===
-zaplink.safebrowsing.api-key=<your_google_safe_browsing_api_key>
+safebrowsing.api-key=REPLACE_WITH_YOUR_GOOGLE_SAFE_BROWSING_API_KEY
+safebrowsing.timeout-ms=2000
+safebrowsing.enabled=true
 
 # === Application ===
 zaplink.base-url=http://localhost:8080
+zaplink.frontend-url=http://localhost:5173

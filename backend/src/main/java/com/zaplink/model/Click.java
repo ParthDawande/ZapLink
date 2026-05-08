@@ -21,7 +21,8 @@ public class Click {
     @Column(name = "link_id", nullable = false)
     private Long linkId;
 
-    // DB sets this via DEFAULT CURRENT_TIMESTAMP; we never write it from Java.
-    @Column(name = "clicked_at", insertable = false, updatable = false)
+    // Set explicitly by the async listener at event creation time (not listener-fire time).
+    // DB DEFAULT CURRENT_TIMESTAMP remains as a fallback but is not used in normal operation.
+    @Column(name = "clicked_at")
     private LocalDateTime clickedAt;
 }

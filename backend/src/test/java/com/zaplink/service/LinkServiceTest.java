@@ -5,6 +5,7 @@ import com.zaplink.dto.CreateLinkResult;
 import com.zaplink.dto.LinkResponse;
 import com.zaplink.exception.InvalidUrlException;
 import com.zaplink.exception.LinkNotFoundException;
+import com.zaplink.exception.MaliciousUrlException;
 import com.zaplink.model.Link;
 import com.zaplink.repository.LinkRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,12 +34,18 @@ class LinkServiceTest {
     @Mock
     private LinkRepository linkRepository;
 
+    @Mock
+    private SafeBrowsingService safeBrowsingService;
+
     @InjectMocks
     private LinkService linkService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(linkService, "baseUrl", "http://localhost:8080");
+        // Default: all URLs are safe. lenient() avoids UnnecessaryStubbingException in
+        // tests that never call createLink (get/delete tests don't reach isSafe).
+        lenient().when(safeBrowsingService.isSafe(anyString())).thenReturn(true);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
@@ -127,6 +134,35 @@ class LinkServiceTest {
         assertThatThrownBy(() -> linkService.createLink(1L, request))
                 .isInstanceOf(InvalidUrlException.class)
                 .hasMessageContaining("future");
+    }
+
+    @Test
+    void createLink_maliciousUrl_throwsMaliciousUrlException() {
+        when(linkRepository.findByUserIdAndLongUrlAndIsActiveTrue(anyLong(), anyString()))
+                .thenReturn(Optional.empty());
+        when(safeBrowsingService.isSafe(anyString())).thenReturn(false);
+
+        CreateLinkRequest request = new CreateLinkRequest(
+                "http://malware.testing.google.test/testing/malware/", null);
+
+        assertThatThrownBy(() -> linkService.createLink(1L, request))
+                .isInstanceOf(MaliciousUrlException.class)
+                .hasMessage("This URL has been flagged as unsafe");
+    }
+
+    @Test
+    void createLink_safeBrowsingFailsOpen_createsLink() {
+        // When isSafe returns true (fail-open), link creation proceeds normally.
+        when(linkRepository.findByUserIdAndLongUrlAndIsActiveTrue(anyLong(), anyString()))
+                .thenReturn(Optional.empty());
+        when(safeBrowsingService.isSafe(anyString())).thenReturn(true);
+        stubSaveWithId(55L);
+
+        CreateLinkResult result = linkService.createLink(1L,
+                new CreateLinkRequest("https://example.com/timeout-test", null));
+
+        assertThat(result.isNew()).isTrue();
+        assertThat(result.response().shortCode()).isNotNull();
     }
 
     // ── Dedup tests ──────────────────────────────────────────────────────────

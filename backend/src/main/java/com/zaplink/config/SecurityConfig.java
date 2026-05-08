@@ -1,14 +1,12 @@
 package com.zaplink.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zaplink.dto.ErrorResponse;
 import com.zaplink.security.JwtAuthenticationEntryPoint;
 import com.zaplink.security.JwtAuthenticationFilter;
-import jakarta.servlet.http.HttpServletResponse;
+import com.zaplink.security.RateLimitFilter;
+import com.zaplink.security.RestAccessDeniedHandler;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,7 +18,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Configuration
@@ -29,14 +26,17 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    private final ObjectMapper objectMapper;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
+    private final RateLimitFilter rateLimitFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-                          ObjectMapper objectMapper) {
+                          RestAccessDeniedHandler restAccessDeniedHandler,
+                          RateLimitFilter rateLimitFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
-        this.objectMapper = objectMapper;
+        this.restAccessDeniedHandler = restAccessDeniedHandler;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
     @Bean
@@ -53,21 +53,11 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                .accessDeniedHandler((request, response, denied) -> {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.setCharacterEncoding("UTF-8");
-                    ErrorResponse body = new ErrorResponse(
-                            LocalDateTime.now(),
-                            HttpStatus.FORBIDDEN.value(),
-                            HttpStatus.FORBIDDEN.getReasonPhrase(),
-                            "Forbidden",
-                            request.getRequestURI()
-                    );
-                    response.getWriter().write(objectMapper.writeValueAsString(body));
-                })
+                .accessDeniedHandler(restAccessDeniedHandler)
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            // RateLimitFilter runs after JWT so SecurityContext is populated and userId is available.
+            .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -79,6 +69,15 @@ public class SecurityConfig {
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
             JwtAuthenticationFilter filter) {
         FilterRegistrationBean<JwtAuthenticationFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setEnabled(false);
+        return reg;
+    }
+
+    // Same double-registration guard for RateLimitFilter.
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(
+            RateLimitFilter filter) {
+        FilterRegistrationBean<RateLimitFilter> reg = new FilterRegistrationBean<>(filter);
         reg.setEnabled(false);
         return reg;
     }

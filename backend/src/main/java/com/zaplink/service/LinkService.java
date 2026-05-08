@@ -1,12 +1,16 @@
 package com.zaplink.service;
 
+import com.zaplink.dto.AnalyticsResponse;
 import com.zaplink.dto.CreateLinkRequest;
 import com.zaplink.dto.CreateLinkResult;
+import com.zaplink.dto.DailyClickCount;
 import com.zaplink.dto.LinkResponse;
 import com.zaplink.exception.InvalidQueryParamException;
 import com.zaplink.exception.InvalidUrlException;
 import com.zaplink.exception.LinkNotFoundException;
+import com.zaplink.exception.MaliciousUrlException;
 import com.zaplink.model.Link;
+import com.zaplink.repository.ClickRepository;
 import com.zaplink.repository.LinkRepository;
 import com.zaplink.util.Base62Encoder;
 import com.zaplink.util.ReservedShortCodes;
@@ -19,8 +23,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -30,9 +39,14 @@ public class LinkService {
     private String baseUrl;
 
     private final LinkRepository linkRepository;
+    private final ClickRepository clickRepository;
+    private final SafeBrowsingService safeBrowsingService;
 
-    public LinkService(LinkRepository linkRepository) {
+    public LinkService(LinkRepository linkRepository, ClickRepository clickRepository,
+                       SafeBrowsingService safeBrowsingService) {
         this.linkRepository = linkRepository;
+        this.clickRepository = clickRepository;
+        this.safeBrowsingService = safeBrowsingService;
     }
 
     @Transactional
@@ -82,11 +96,16 @@ public class LinkService {
             // expired — fall through and create a new link
         }
 
-        // e+f. Build initial entity (shortCode=null) and save to get the auto-generated id
+        // e. Safe Browsing check — after dedup so cached hits don't burn API quota
+        if (!safeBrowsingService.isSafe(longUrl)) {
+            throw new MaliciousUrlException("This URL has been flagged as unsafe");
+        }
+
+        // f+g. Build initial entity (shortCode=null) and save to get the auto-generated id
         Link link = buildLink(userId, longUrl, request.getExpiresAt());
         link = linkRepository.save(link);
 
-        // g+h. Encode id → Base62; retry if the code collides with a reserved keyword
+        // h+i. Encode id → Base62; retry if the code collides with a reserved keyword
         String code = null;
         for (int attempt = 0; attempt < 5; attempt++) {
             code = Base62Encoder.encode(link.getId());
@@ -106,7 +125,7 @@ public class LinkService {
             throw new IllegalStateException("Could not generate a non-reserved short code after 5 attempts");
         }
 
-        // i. Stamp the short code onto the winning row
+        // j. Stamp the short code onto the winning row
         link.setShortCode(code);
         linkRepository.save(link);
 
@@ -168,6 +187,47 @@ public class LinkService {
 
         link.setDeletedAt(LocalDateTime.now());
         linkRepository.save(link);
+    }
+
+    @Transactional(readOnly = true)
+    public AnalyticsResponse getAnalyticsForUser(Long userId, Long linkId) {
+        // Same 404-for-everything pattern as get-one — ownership mismatch leaks nothing.
+        Link link = linkRepository.findById(linkId)
+                .orElseThrow(() -> new LinkNotFoundException("Link not found"));
+        if (!userId.equals(link.getUserId())) {
+            throw new LinkNotFoundException("Link not found");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        // 30-day window: today (inclusive) + the previous 29 days = 30 entries total.
+        // Truncate to midnight so the window starts at 00:00:00, not the current second.
+        // Off-by-one note: minusDays(29) + today = 30 days, not 31.
+        LocalDateTime since = now.minusDays(29).truncatedTo(ChronoUnit.DAYS);
+
+        long totalClicks      = clickRepository.countByLinkId(linkId);
+        long last30DaysClicks = clickRepository.countByLinkIdSince(linkId, since);
+        List<Object[]> raw    = clickRepository.findDailyClickCounts(linkId, since);
+
+        // Build lookup map — DB only returns days with >= 1 click.
+        // Row format: [year, month, day, count] — using standard JPQL YEAR/MONTH/DAY functions.
+        Map<LocalDate, Long> clicksByDay = new HashMap<>();
+        for (Object[] row : raw) {
+            LocalDate date = LocalDate.of(
+                    ((Number) row[0]).intValue(),
+                    ((Number) row[1]).intValue(),
+                    ((Number) row[2]).intValue());
+            clicksByDay.put(date, ((Number) row[3]).longValue());
+        }
+
+        // Zero-fill: produce exactly 30 entries ordered oldest → newest.
+        LocalDate today = now.toLocalDate();
+        List<DailyClickCount> dailyClicks = new ArrayList<>(30);
+        for (int i = 0; i < 30; i++) {
+            LocalDate date = today.minusDays(29 - i);
+            dailyClicks.add(new DailyClickCount(date, clicksByDay.getOrDefault(date, 0L)));
+        }
+
+        return new AnalyticsResponse(linkId, link.getShortCode(), totalClicks, last30DaysClicks, dailyClicks);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
