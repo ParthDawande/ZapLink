@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import QrCodeModal from '../components/QrCodeModal'
 
 function StatusBadge({ status }) {
   const cls = { active: 'bg-success', expired: 'bg-secondary', disabled: 'bg-danger' }
@@ -30,6 +31,8 @@ export default function DashboardPage() {
   const [resultCopied, setResultCopied] = useState(false)
 
   // ── Links table ───────────────────────────────────────────────────────────
+  const [qrModalLink, setQrModalLink] = useState(null)
+
   const [links, setLinks]             = useState([])
   const [page, setPage]               = useState(0)
   const [totalPages, setTotalPages]   = useState(0)
@@ -120,9 +123,14 @@ export default function DashboardPage() {
             Logged in as <strong>{user?.username}</strong>
           </span>
         </div>
-        <button className="btn btn-outline-secondary btn-sm" onClick={handleLogout}>
-          Logout
-        </button>
+        <div className="d-flex gap-2">
+          {user?.role === 'ADMIN' && (
+            <Link to="/admin" className="btn btn-sm btn-outline-primary">Admin</Link>
+          )}
+          <button className="btn btn-outline-secondary btn-sm" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Shorten form */}
@@ -228,6 +236,13 @@ export default function DashboardPage() {
                           View
                         </Link>
                         <button
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => setQrModalLink(link)}
+                          disabled={link.status !== 'active'}
+                          title={link.status !== 'active' ? 'Not available for expired/disabled links' : 'Show QR code'}>
+                          QR
+                        </button>
+                        <button
                           className="btn btn-sm btn-outline-danger"
                           onClick={() => handleDelete(link.id)}>
                           Delete
@@ -263,6 +278,13 @@ export default function DashboardPage() {
           )}
         </>
       )}
+
+      <QrCodeModal
+        linkId={qrModalLink?.id}
+        shortUrl={qrModalLink?.shortUrl}
+        isOpen={qrModalLink !== null}
+        onClose={() => setQrModalLink(null)}
+      />
     </div>
   )
 }

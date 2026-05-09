@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import ClickChart from '../components/ClickChart'
+import QrCodeModal from '../components/QrCodeModal'
 
 function StatusBadge({ status }) {
   const cls = { active: 'bg-success', expired: 'bg-secondary', disabled: 'bg-danger' }
@@ -24,6 +25,7 @@ export default function LinkDetailPage() {
   const [error, setError]         = useState('')
   const [copied, setCopied]       = useState(false)
   const [deleting, setDeleting]   = useState(false)
+  const [qrOpen, setQrOpen]       = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -151,6 +153,19 @@ export default function LinkDetailPage() {
         </div>
       )}
 
+      {/* QR Code button */}
+      {link && (
+        <div className="mb-4">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => setQrOpen(true)}
+            disabled={link.status !== 'active'}
+            title={link.status !== 'active' ? 'Not available for expired/disabled links' : 'Show QR code'}>
+            QR Code
+          </button>
+        </div>
+      )}
+
       {/* Chart */}
       {analytics && (
         <div className="card mb-4">
@@ -198,6 +213,15 @@ export default function LinkDetailPage() {
           {deleting ? 'Deleting…' : 'Delete Link'}
         </button>
       </div>
+
+      {link && (
+        <QrCodeModal
+          linkId={link.id}
+          shortUrl={link.shortUrl}
+          isOpen={qrOpen}
+          onClose={() => setQrOpen(false)}
+        />
+      )}
     </div>
   )
 }

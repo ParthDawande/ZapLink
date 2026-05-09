@@ -97,6 +97,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOperation(
+            InvalidOperationException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(LinkNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleLinkNotFound(
             LinkNotFoundException ex, HttpServletRequest request) {

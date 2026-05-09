@@ -28,4 +28,13 @@ public interface ClickRepository extends JpaRepository<Click, Long> {
         """)
     List<Object[]> findDailyClickCounts(@Param("linkId") Long linkId,
                                         @Param("since") LocalDateTime since);
+
+    // Column order: total_clicks, clicks_last_30
+    // Returns List<Object[]> — Spring Data JPA wraps native results; call .get(0) for the row.
+    @Query(value = """
+            SELECT COUNT(*),
+                   SUM(CASE WHEN clicked_at >= :since THEN 1 ELSE 0 END)
+            FROM clicks
+            """, nativeQuery = true)
+    List<Object[]> getClickStats(@Param("since") LocalDateTime since);
 }

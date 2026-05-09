@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +51,20 @@ public class LinkController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(linkService.getLinkForUser(principal.userId(), id));
+    }
+
+    @GetMapping(value = "/{id}/qr", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> getQrCode(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @PathVariable Long id) {
+
+        byte[] png = linkService.getQrCodeForUser(principal.userId(), id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .contentLength(png.length)
+                .header("Content-Disposition", "inline; filename=\"qr-" + id + ".png\"")
+                .header("Cache-Control", "public, max-age=86400")
+                .body(png);
     }
 
     @GetMapping("/{id}/analytics")

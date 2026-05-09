@@ -1,10 +1,15 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import LinkDetailPage from './pages/LinkDetailPage'
+import AdminLayout from './pages/admin/AdminLayout'
+import ReportsTab from './pages/admin/ReportsTab'
+import UsersTab from './pages/admin/UsersTab'
+import LinksTab from './pages/admin/LinksTab'
 
 function RootRedirect() {
   const { isAuthenticated } = useAuth()
@@ -23,6 +28,15 @@ export default function App() {
         element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/links/:id"
         element={<ProtectedRoute><LinkDetailPage /></ProtectedRoute>} />
+
+      {/* Admin routes — nested so AdminLayout renders with <Outlet /> */}
+      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+        <Route index element={<Navigate to="/admin/reports" replace />} />
+        <Route path="reports" element={<ReportsTab />} />
+        <Route path="users"   element={<UsersTab />} />
+        <Route path="links"   element={<LinksTab />} />
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

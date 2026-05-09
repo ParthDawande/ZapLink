@@ -1,5 +1,9 @@
 package com.zaplink.service;
 
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
 import com.zaplink.dto.CreateLinkRequest;
 import com.zaplink.dto.CreateLinkResult;
 import com.zaplink.dto.LinkResponse;
@@ -7,6 +11,7 @@ import com.zaplink.exception.InvalidUrlException;
 import com.zaplink.exception.LinkNotFoundException;
 import com.zaplink.exception.MaliciousUrlException;
 import com.zaplink.model.Link;
+import com.zaplink.repository.ClickRepository;
 import com.zaplink.repository.LinkRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +22,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +41,9 @@ class LinkServiceTest {
 
     @Mock
     private LinkRepository linkRepository;
+
+    @Mock
+    private ClickRepository clickRepository;
 
     @Mock
     private SafeBrowsingService safeBrowsingService;
@@ -286,6 +297,88 @@ class LinkServiceTest {
                 .isInstanceOf(LinkNotFoundException.class)
                 .hasMessage("Link not found");
     }
+
+    // ── getQrCodeForUser tests ───────────────────────────────────────────────
+
+    @Test
+    void getQrCode_ownActiveLink_returnsPngSignature() {
+        Link link = activeLink(10L, "abc123", "https://example.com", null);
+        link.setUserId(1L);
+        when(linkRepository.findById(10L)).thenReturn(Optional.of(link));
+
+        byte[] png = linkService.getQrCodeForUser(1L, 10L);
+
+        assertThat(png).isNotEmpty();
+        assertThat(png[0] & 0xFF).isEqualTo(0x89);
+        assertThat(png[1] & 0xFF).isEqualTo(0x50);
+        assertThat(png[2] & 0xFF).isEqualTo(0x4E);
+        assertThat(png[3] & 0xFF).isEqualTo(0x47);
+    }
+
+    @Test
+    void getQrCode_ownActiveLink_encodesFullShortUrl() throws Exception {
+        Link link = activeLink(10L, "abc123", "https://example.com", null);
+        link.setUserId(1L);
+        when(linkRepository.findById(10L)).thenReturn(Optional.of(link));
+
+        byte[] png = linkService.getQrCodeForUser(1L, 10L);
+
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(png));
+        BinaryBitmap bitmap = new BinaryBitmap(
+                new HybridBinarizer(new BufferedImageLuminanceSource(image)));
+        String decoded = new MultiFormatReader().decode(bitmap).getText();
+        assertThat(decoded).isEqualTo("http://localhost:8080/abc123");
+    }
+
+    @Test
+    void getQrCode_otherUsersLink_throwsLinkNotFoundException() {
+        Link link = activeLink(10L, "abc123", "https://example.com", null);
+        link.setUserId(99L);
+        when(linkRepository.findById(10L)).thenReturn(Optional.of(link));
+
+        assertThatThrownBy(() -> linkService.getQrCodeForUser(1L, 10L))
+                .isInstanceOf(LinkNotFoundException.class)
+                .hasMessage("Link not found");
+    }
+
+    @Test
+    void getQrCode_nonExistentLink_throwsLinkNotFoundException() {
+        when(linkRepository.findById(99999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> linkService.getQrCodeForUser(1L, 99999L))
+                .isInstanceOf(LinkNotFoundException.class)
+                .hasMessage("Link not found");
+    }
+
+    @Test
+    void getQrCode_disabledLink_throwsLinkNotFoundWithDisabledMessage() {
+        Link link = new Link();
+        link.setId(10L);
+        link.setShortCode("abc123");
+        link.setUserId(1L);
+        link.setIsActive(false);
+        link.setLongUrl("https://example.com");
+        link.setCreatedAt(LocalDateTime.now().minusDays(1));
+        when(linkRepository.findById(10L)).thenReturn(Optional.of(link));
+
+        assertThatThrownBy(() -> linkService.getQrCodeForUser(1L, 10L))
+                .isInstanceOf(LinkNotFoundException.class)
+                .hasMessage("Cannot generate QR for a disabled link");
+    }
+
+    @Test
+    void getQrCode_expiredLink_throwsLinkNotFoundWithExpiredMessage() {
+        Link link = activeLink(10L, "abc123", "https://example.com",
+                LocalDateTime.now().minusHours(1));
+        link.setUserId(1L);
+        when(linkRepository.findById(10L)).thenReturn(Optional.of(link));
+
+        assertThatThrownBy(() -> linkService.getQrCodeForUser(1L, 10L))
+                .isInstanceOf(LinkNotFoundException.class)
+                .hasMessage("Cannot generate QR for an expired link");
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
 
     @Test
     void createLink_differentUsers_sameUrl_getDifferentLinks() {

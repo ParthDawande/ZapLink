@@ -13,6 +13,7 @@ import com.zaplink.model.Link;
 import com.zaplink.repository.ClickRepository;
 import com.zaplink.repository.LinkRepository;
 import com.zaplink.util.Base62Encoder;
+import com.zaplink.util.QrCodeGenerator;
 import com.zaplink.util.ReservedShortCodes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -228,6 +229,28 @@ public class LinkService {
         }
 
         return new AnalyticsResponse(linkId, link.getShortCode(), totalClicks, last30DaysClicks, dailyClicks);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] getQrCodeForUser(Long userId, Long linkId) {
+        // @SQLRestriction("deleted_at IS NULL") makes soft-deleted rows invisible here.
+        Link link = linkRepository.findById(linkId)
+                .orElseThrow(() -> new LinkNotFoundException("Link not found"));
+
+        if (!userId.equals(link.getUserId())) {
+            throw new LinkNotFoundException("Link not found");
+        }
+
+        if (Boolean.FALSE.equals(link.getIsActive())) {
+            throw new LinkNotFoundException("Cannot generate QR for a disabled link");
+        }
+
+        if (link.getExpiresAt() != null && link.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new LinkNotFoundException("Cannot generate QR for an expired link");
+        }
+
+        String shortUrl = baseUrl + "/" + link.getShortCode();
+        return QrCodeGenerator.generatePng(shortUrl, 300);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
