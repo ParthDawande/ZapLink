@@ -29,31 +29,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container mt-5" style={{ maxWidth: '420px' }}>
-      <h1 className="mb-1">⚡ ZapLink</h1>
-      <p className="text-muted mb-4">Sign in to your account</p>
-
-      {error && <div className="alert alert-danger" role="alert">{error}</div>}
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label" htmlFor="email">Email</label>
-          <input id="email" type="email" className="form-control"
-            value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-brand">
+          <span className="auth-logo">⚡</span>
+          <span className="auth-title">ZapLink</span>
         </div>
-        <div className="mb-3">
-          <label className="form-label" htmlFor="password">Password</label>
-          <input id="password" type="password" className="form-control"
-            value={password} onChange={e => setPassword(e.target.value)} required />
-        </div>
-        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
+        <h1 className="auth-heading">Welcome back</h1>
+        <p className="auth-subheading">Sign in to manage your links</p>
 
-      <p className="mt-3 text-center text-muted small">
-        No account? <Link to="/register">Register</Link>
-      </p>
+        {error && <div className="alert alert-danger" role="alert">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="email">Email</label>
+            <input id="email" type="email" className="form-control"
+              value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="password">Password</label>
+            <input id="password" type="password" className="form-control"
+              value={password} onChange={e => setPassword(e.target.value)} required />
+          </div>
+          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+
+        <p className="auth-switch">
+          Don't have an account? <Link to="/register">Sign up</Link>
+        </p>
+      </div>
     </div>
   )
 }

@@ -77,8 +77,8 @@ export default function LinkDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mt-5 text-center">
-        <div className="spinner-border text-primary" role="status">
+      <div className="zl-page text-center pt-5">
+        <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading…</span>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function LinkDetailPage() {
 
   if (notFound) {
     return (
-      <div className="container mt-5" style={{ maxWidth: '700px' }}>
+      <div className="zl-page" style={{ maxWidth: '700px' }}>
         <div className="alert alert-warning" role="alert">Link not found.</div>
         <button className="btn btn-outline-secondary" onClick={() => navigate('/dashboard')}>
           ← Back to Dashboard
@@ -98,7 +98,7 @@ export default function LinkDetailPage() {
 
   if (error && !link) {
     return (
-      <div className="container mt-5" style={{ maxWidth: '700px' }}>
+      <div className="zl-page" style={{ maxWidth: '700px' }}>
         <div className="alert alert-danger" role="alert">{error}</div>
         <button className="btn btn-outline-secondary" onClick={() => navigate('/dashboard')}>
           ← Back to Dashboard
@@ -108,12 +108,19 @@ export default function LinkDetailPage() {
   }
 
   return (
-    <div className="container mt-5" style={{ maxWidth: '760px' }}>
+    <div className="zl-page">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Link Details</h2>
-        <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate('/dashboard')}>
-          ← Back to Dashboard
+      <div className="zl-page-header d-flex justify-content-between align-items-start">
+        <div>
+          <h1 className="zl-page-title font-monospace">{link.shortCode}</h1>
+          <p className="zl-page-subtitle text-truncate" title={link.longUrl}
+            style={{ maxWidth: '600px' }}>
+            {link.longUrl}
+          </p>
+        </div>
+        <button className="btn btn-outline-secondary btn-sm flex-shrink-0"
+          onClick={() => navigate('/dashboard')}>
+          ← Back
         </button>
       </div>
 
@@ -124,95 +131,80 @@ export default function LinkDetailPage() {
       {/* Stat cards */}
       {analytics && (
         <div className="row g-3 mb-4">
-          <div className="col-4">
-            <div className="card text-center h-100">
-              <div className="card-body py-3">
-                <div className="fs-2 fw-bold text-primary">{analytics.totalClicks}</div>
-                <div className="text-muted small">Total Clicks</div>
+          <div className="col-md-4">
+            <div className="zl-stat">
+              <div className="zl-stat-label">Total Clicks</div>
+              <div className="zl-stat-value zl-stat-accent">{analytics.totalClicks}</div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="zl-stat">
+              <div className="zl-stat-label">Last 30 Days</div>
+              <div className="zl-stat-value">{analytics.last30DaysClicks}</div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="zl-stat">
+              <div className="zl-stat-label">Status</div>
+              <div className="zl-stat-value">
+                <StatusBadge status={link.status} />
               </div>
             </div>
           </div>
-          <div className="col-4">
-            <div className="card text-center h-100">
-              <div className="card-body py-3">
-                <div className="fs-2 fw-bold text-primary">{analytics.last30DaysClicks}</div>
-                <div className="text-muted small">Last 30 Days</div>
-              </div>
-            </div>
-          </div>
-          <div className="col-4">
-            <div className="card text-center h-100">
-              <div className="card-body py-3">
-                <div className="fs-2 fw-bold">
-                  <StatusBadge status={link.status} />
-                </div>
-                <div className="text-muted small mt-1">Status</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QR Code button */}
-      {link && (
-        <div className="mb-4">
-          <button
-            className="btn btn-outline-secondary btn-sm"
-            onClick={() => setQrOpen(true)}
-            disabled={link.status !== 'active'}
-            title={link.status !== 'active' ? 'Not available for expired/disabled links' : 'Show QR code'}>
-            QR Code
-          </button>
         </div>
       )}
 
       {/* Chart */}
       {analytics && (
-        <div className="card mb-4">
-          <div className="card-body">
-            <h6 className="card-title text-muted mb-3">Clicks — last 30 days</h6>
-            <ClickChart dailyClicks={analytics.dailyClicks} />
+        <div className="zl-stat mb-4">
+          <div className="zl-stat-label" style={{ marginBottom: '1rem' }}>
+            Click activity — last 30 days
           </div>
+          <ClickChart dailyClicks={analytics.dailyClicks} />
         </div>
       )}
 
       {/* Link details */}
-      <div className="card">
-        <div className="card-body">
-          <dl className="row mb-0">
-            <dt className="col-sm-4">Short URL</dt>
-            <dd className="col-sm-8">
-              <div className="d-flex align-items-center gap-2 flex-wrap">
-                <a href={link.shortUrl} target="_blank" rel="noreferrer">{link.shortUrl}</a>
-                <button
-                  className={`btn btn-sm ${copied ? 'btn-success' : 'btn-outline-secondary'}`}
-                  onClick={handleCopy}>
-                  {copied ? '✓ Copied!' : 'Copy'}
+      <div className="zl-stat mb-4">
+        <dl className="row mb-0">
+          <dt className="col-sm-3 text-muted" style={{ fontSize: '0.875rem' }}>Short URL</dt>
+          <dd className="col-sm-9">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <a href={link.shortUrl} target="_blank" rel="noreferrer"
+                className="zl-short-code">{link.shortUrl}</a>
+              <button
+                className={`btn btn-sm ${copied ? 'btn-success' : 'btn-outline-secondary'}`}
+                onClick={handleCopy}>
+                {copied ? '✓ Copied!' : 'Copy'}
+              </button>
+              {link.status === 'active' && (
+                <button className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setQrOpen(true)}>
+                  QR Code
                 </button>
-              </div>
-            </dd>
+              )}
+            </div>
+          </dd>
 
-            <dt className="col-sm-4">Original URL</dt>
-            <dd className="col-sm-8 text-break">
-              <a href={link.longUrl} target="_blank" rel="noreferrer">{link.longUrl}</a>
-            </dd>
+          <dt className="col-sm-3 text-muted" style={{ fontSize: '0.875rem' }}>Original URL</dt>
+          <dd className="col-sm-9 text-break">
+            <a href={link.longUrl} target="_blank" rel="noreferrer"
+              className="text-muted" style={{ fontSize: '0.875rem' }}>{link.longUrl}</a>
+          </dd>
 
-            <dt className="col-sm-4">Created</dt>
-            <dd className="col-sm-8">{formatDate(link.createdAt)}</dd>
+          <dt className="col-sm-3 text-muted" style={{ fontSize: '0.875rem' }}>Created</dt>
+          <dd className="col-sm-9" style={{ fontSize: '0.875rem' }}>{formatDate(link.createdAt)}</dd>
 
-            <dt className="col-sm-4">Expires</dt>
-            <dd className="col-sm-8">
-              {link.expiresAt ? formatDate(link.expiresAt) : 'Never expires'}
-            </dd>
-          </dl>
-        </div>
+          <dt className="col-sm-3 text-muted mb-0" style={{ fontSize: '0.875rem' }}>Expires</dt>
+          <dd className="col-sm-9 mb-0" style={{ fontSize: '0.875rem' }}>
+            {link.expiresAt ? formatDate(link.expiresAt) : 'Never expires'}
+          </dd>
+        </dl>
       </div>
 
-      <div className="mt-4">
-        <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-          {deleting ? 'Deleting…' : 'Delete Link'}
-        </button>
-      </div>
+      <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+        {deleting ? 'Deleting…' : 'Delete Link'}
+      </button>
 
       {link && (
         <QrCodeModal

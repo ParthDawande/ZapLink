@@ -16,11 +16,8 @@ function UserStatusBadge({ isActive }) {
 }
 
 function RoleBadge({ role }) {
-  return (
-    <span className={`badge ${role === 'ADMIN' ? 'bg-primary' : 'bg-secondary'}`}>
-      {role}
-    </span>
-  )
+  if (role === 'ADMIN') return <span className="badge bg-success">ADMIN</span>
+  return <span className="text-muted" style={{ fontSize: '0.875rem' }}>USER</span>
 }
 
 export default function UsersTab() {
@@ -84,10 +81,14 @@ export default function UsersTab() {
   }
 
   return (
-    <div>
-      {/* Controls */}
-      <div className="row g-2 mb-3">
-        <div className="col-sm-6">
+    <div className="zl-page">
+      <div className="zl-page-header">
+        <h2 className="zl-page-title" style={{ fontSize: '1.25rem' }}>Users</h2>
+        <p className="zl-page-subtitle mb-0">{users.length} total</p>
+      </div>
+
+      <section className="zl-links-section">
+        <div className="zl-filter-bar">
           <input
             type="search"
             className="form-control"
@@ -95,8 +96,6 @@ export default function UsersTab() {
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
           />
-        </div>
-        <div className="col-sm-3">
           <select
             className="form-select"
             value={statusFilter}
@@ -106,79 +105,78 @@ export default function UsersTab() {
             <option value="disabled">Banned</option>
           </select>
         </div>
-        <div className="col-sm-3 d-flex align-items-center">
-          <span className="text-muted small">{users.length} result{users.length !== 1 ? 's' : ''}</span>
-        </div>
-      </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+        {error && <div className="alert alert-danger m-3">{error}</div>}
 
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading…</span>
+        {loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border" role="status">
+              <span className="visually-hidden">Loading…</span>
+            </div>
           </div>
-        </div>
-      ) : users.length === 0 ? (
-        <p className="text-center text-muted py-5">No users found.</p>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-hover align-middle">
-            <thead className="table-light">
-              <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Links</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(row => {
-                const isSelf = row.id === currentUser?.id
-                const isBanned = !row.isActive
-                return (
-                  <tr key={row.id} className={isSelf ? 'table-active' : ''}>
-                    <td className="fw-medium">
-                      {row.username}
-                      {isSelf && <span className="badge bg-secondary ms-1 small">you</span>}
-                    </td>
-                    <td className="text-muted">{row.email}</td>
-                    <td><RoleBadge role={row.role} /></td>
-                    <td><UserStatusBadge isActive={row.isActive} /></td>
-                    <td>{row.linkCount}</td>
-                    <td className="text-nowrap">{formatDate(row.createdAt)}</td>
-                    <td>
-                      <div className="d-flex gap-1">
-                        <button
-                          className={`btn btn-sm ${isBanned ? 'btn-outline-success' : 'btn-outline-warning'}`}
-                          disabled={isSelf}
-                          title={isSelf ? 'You cannot ban yourself' : ''}
-                          onClick={() => handleBan(row.id, !isBanned, row.username, row.linkCount)}>
-                          {isBanned ? 'Unban' : 'Ban'}
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          disabled={isSelf || !isBanned}
-                          title={
-                            isSelf ? 'You cannot delete yourself'
-                            : !isBanned ? 'User must be banned before deletion'
-                            : ''
-                          }
-                          onClick={() => handleDelete(row.id, row.username)}>
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+        ) : users.length === 0 ? (
+          <div className="zl-empty">
+            <p className="zl-empty-title">No users found.</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Links</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(row => {
+                  const isSelf = row.id === currentUser?.id
+                  const isBanned = !row.isActive
+                  return (
+                    <tr key={row.id} className={isSelf ? 'zl-row-self' : ''}>
+                      <td>
+                        <span className="fw-semibold">{row.username}</span>
+                        {isSelf && <span className="badge bg-secondary ms-2">you</span>}
+                      </td>
+                      <td className="text-muted" style={{ fontSize: '0.875rem' }}>{row.email}</td>
+                      <td><RoleBadge role={row.role} /></td>
+                      <td><UserStatusBadge isActive={row.isActive} /></td>
+                      <td>{row.linkCount}</td>
+                      <td className="text-nowrap">{formatDate(row.createdAt)}</td>
+                      <td>
+                        <div className="zl-row-actions">
+                          <button
+                            className={`btn btn-sm ${isBanned ? 'btn-outline-success' : 'btn-outline-warning'}`}
+                            disabled={isSelf}
+                            title={isSelf ? 'You cannot ban yourself' : ''}
+                            onClick={() => handleBan(row.id, !isBanned, row.username, row.linkCount)}>
+                            {isBanned ? 'Unban' : 'Ban'}
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            disabled={isSelf || !isBanned}
+                            title={
+                              isSelf ? 'You cannot delete yourself'
+                              : !isBanned ? 'User must be banned before deletion'
+                              : ''
+                            }
+                            onClick={() => handleDelete(row.id, row.username)}>
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   )
 }

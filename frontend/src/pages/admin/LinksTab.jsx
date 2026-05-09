@@ -84,10 +84,14 @@ export default function LinksTab() {
   }
 
   return (
-    <div>
-      {/* Controls */}
-      <div className="row g-2 mb-3">
-        <div className="col-sm-5">
+    <div className="zl-page">
+      <div className="zl-page-header">
+        <h2 className="zl-page-title" style={{ fontSize: '1.25rem' }}>Links</h2>
+        <p className="zl-page-subtitle mb-0">{totalElements} total</p>
+      </div>
+
+      <section className="zl-links-section">
+        <div className="zl-filter-bar">
           <input
             type="search"
             className="form-control"
@@ -95,8 +99,6 @@ export default function LinksTab() {
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
           />
-        </div>
-        <div className="col-sm-3">
           <select
             className="form-select"
             value={statusFilter}
@@ -108,115 +110,113 @@ export default function LinksTab() {
             <option value="deleted">Deleted</option>
           </select>
         </div>
-        <div className="col-sm-4 d-flex align-items-center">
-          <span className="text-muted small">{totalElements} link{totalElements !== 1 ? 's' : ''}</span>
-        </div>
-      </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+        {error && <div className="alert alert-danger m-3">{error}</div>}
 
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading…</span>
+        {loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border" role="status">
+              <span className="visually-hidden">Loading…</span>
+            </div>
           </div>
-        </div>
-      ) : links.length === 0 ? (
-        <p className="text-center text-muted py-5">No links found.</p>
-      ) : (
-        <>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>Short Code</th>
-                  <th>Long URL</th>
-                  <th>Owner</th>
-                  <th>Status</th>
-                  <th>Clicks</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {links.map(link => {
-                  const isDeleted    = link.status === 'deleted'
-                  const isUserBanned = link.disabledReason === 'USER_BANNED'
-                  const canToggle    = !isDeleted && !isUserBanned
-                  const toggleLabel  = link.isActive ? 'Disable' : 'Enable'
-                  const toggleTitle  = isUserBanned
-                    ? 'Owner is banned — unban the user to manage this link'
-                    : isDeleted ? 'Cannot modify a deleted link' : ''
+        ) : links.length === 0 ? (
+          <div className="zl-empty">
+            <p className="zl-empty-title">No links found.</p>
+          </div>
+        ) : (
+          <>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>Short Code</th>
+                    <th>Long URL</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                    <th>Clicks</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {links.map(link => {
+                    const isDeleted    = link.status === 'deleted'
+                    const isUserBanned = link.disabledReason === 'USER_BANNED'
+                    const canToggle    = !isDeleted && !isUserBanned
+                    const toggleLabel  = link.isActive ? 'Disable' : 'Enable'
+                    const toggleTitle  = isUserBanned
+                      ? 'Owner is banned — unban the user to manage this link'
+                      : isDeleted ? 'Cannot modify a deleted link' : ''
 
-                  return (
-                    <tr key={link.id}>
-                      <td>
-                        {link.status === 'active' ? (
-                          <a
-                            href={link.shortUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-decoration-none fw-medium font-monospace">
-                            {link.shortCode}
-                          </a>
-                        ) : (
-                          <span className="fw-medium font-monospace text-muted">
-                            {link.shortCode}
+                    return (
+                      <tr key={link.id}>
+                        <td>
+                          {link.status === 'active' ? (
+                            <a href={link.shortUrl} target="_blank" rel="noreferrer"
+                              className="zl-short-code">
+                              {link.shortCode}
+                            </a>
+                          ) : (
+                            <span className="zl-short-code" style={{ color: 'var(--zl-text-dim)', cursor: 'default' }}>
+                              {link.shortCode}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <span className="zl-long-url" title={link.longUrl}>
+                            {truncate(link.longUrl)}
                           </span>
-                        )}
-                      </td>
-                      <td>
-                        <span title={link.longUrl} className="text-muted">
-                          {truncate(link.longUrl)}
-                        </span>
-                      </td>
-                      <td>
-                        {link.owner
-                          ? <span className="text-muted small">{link.owner.username}</span>
-                          : <span className="text-muted small fst-italic">(orphaned)</span>}
-                      </td>
-                      <td><LinkStatusBadge link={link} /></td>
-                      <td>{link.clickCount}</td>
-                      <td className="text-nowrap">{formatDate(link.createdAt)}</td>
-                      <td>
-                        <button
-                          className={`btn btn-sm ${link.isActive ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                          disabled={!canToggle}
-                          title={toggleTitle}
-                          onClick={() => handleToggleDisable(link)}>
-                          {toggleLabel}
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td>
+                          {link.owner
+                            ? <span style={{ fontSize: '0.875rem' }}>{link.owner.username}</span>
+                            : <span className="fst-italic" style={{ fontSize: '0.875rem', color: 'var(--zl-text-dim)' }}>(orphaned)</span>}
+                        </td>
+                        <td><LinkStatusBadge link={link} /></td>
+                        <td>{link.clickCount}</td>
+                        <td className="text-nowrap">{formatDate(link.createdAt)}</td>
+                        <td>
+                          <div className="zl-row-actions">
+                            <button
+                              className={`btn btn-sm ${link.isActive ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                              disabled={!canToggle}
+                              title={toggleTitle}
+                              onClick={() => handleToggleDisable(link)}>
+                              {toggleLabel}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-          {totalPages > 1 && (
-            <nav aria-label="Links pagination">
-              <ul className="pagination justify-content-center">
-                <li className={`page-item ${page === 0 ? 'disabled' : ''}`}>
-                  <button className="page-link" onClick={() => setPage(p => p - 1)}
-                    disabled={page === 0}>
-                    Previous
-                  </button>
-                </li>
-                <li className="page-item disabled">
-                  <span className="page-link">Page {page + 1} of {totalPages}</span>
-                </li>
-                <li className={`page-item ${page >= totalPages - 1 ? 'disabled' : ''}`}>
-                  <button className="page-link" onClick={() => setPage(p => p + 1)}
-                    disabled={page >= totalPages - 1}>
-                    Next
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          )}
-        </>
-      )}
+            {totalPages > 1 && (
+              <nav aria-label="Links pagination" className="p-3">
+                <ul className="pagination justify-content-center mb-0">
+                  <li className={`page-item ${page === 0 ? 'disabled' : ''}`}>
+                    <button className="page-link" onClick={() => setPage(p => p - 1)}
+                      disabled={page === 0}>
+                      Previous
+                    </button>
+                  </li>
+                  <li className="page-item disabled">
+                    <span className="page-link">Page {page + 1} of {totalPages}</span>
+                  </li>
+                  <li className={`page-item ${page >= totalPages - 1 ? 'disabled' : ''}`}>
+                    <button className="page-link" onClick={() => setPage(p => p + 1)}
+                      disabled={page >= totalPages - 1}>
+                      Next
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            )}
+          </>
+        )}
+      </section>
     </div>
   )
 }

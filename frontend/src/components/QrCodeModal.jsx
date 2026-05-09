@@ -88,13 +88,15 @@ export default function QrCodeModal({ linkId, shortUrl, isOpen, onClose }) {
 
               {blobUrl && (
                 <>
-                  <img
-                    src={blobUrl}
-                    alt="QR code"
-                    width={300}
-                    height={300}
-                    className="img-fluid"
-                  />
+                  <div style={{ background: 'white', padding: '1rem', borderRadius: 8, display: 'inline-block' }}>
+                    <img
+                      src={blobUrl}
+                      alt="QR code"
+                      width={300}
+                      height={300}
+                      className="img-fluid"
+                    />
+                  </div>
                   <p className="text-muted small mt-2 mb-0 text-break">{shortUrl}</p>
                 </>
               )}

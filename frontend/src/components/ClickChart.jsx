@@ -18,8 +18,11 @@ function fmtXDate(dateStr) {
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border rounded px-3 py-2 shadow-sm small">
-      <div className="fw-semibold">{label}</div>
+    <div style={{
+      backgroundColor: '#141416', border: '1px solid #262629',
+      borderRadius: 8, color: '#f5f5f7', padding: '0.5rem 0.75rem', fontSize: '0.875rem'
+    }}>
+      <div style={{ fontWeight: 600 }}>{label}</div>
       <div>{payload[0].value} click{payload[0].value !== 1 ? 's' : ''}</div>
     </div>
   )
@@ -42,16 +45,17 @@ export default function ClickChart({ dailyClicks }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e9ecef" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#262629" />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11 }}
+          tick={{ fontSize: 11, fill: '#a1a1aa' }}
           interval={4}
           tickLine={false}
+          axisLine={{ stroke: '#262629' }}
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fontSize: 11 }}
+          tick={{ fontSize: 11, fill: '#a1a1aa' }}
           tickLine={false}
           axisLine={false}
           width={32}
@@ -60,10 +64,10 @@ export default function ClickChart({ dailyClicks }) {
         <Line
           type="monotone"
           dataKey="count"
-          stroke="#0d6efd"
+          stroke="#00ff88"
           strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4 }}
+          dot={{ fill: '#00ff88', r: 3 }}
+          activeDot={{ r: 5, fill: '#00ff88' }}
         />
       </LineChart>
     </ResponsiveContainer>

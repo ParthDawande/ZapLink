@@ -30,36 +30,42 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="container mt-5" style={{ maxWidth: '420px' }}>
-      <h1 className="mb-1">⚡ ZapLink</h1>
-      <p className="text-muted mb-4">Create an account</p>
-
-      {error && <div className="alert alert-danger" role="alert">{error}</div>}
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label" htmlFor="username">Username</label>
-          <input id="username" type="text" className="form-control"
-            value={username} onChange={e => setUsername(e.target.value)} required autoFocus />
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-brand">
+          <span className="auth-logo">⚡</span>
+          <span className="auth-title">ZapLink</span>
         </div>
-        <div className="mb-3">
-          <label className="form-label" htmlFor="email">Email</label>
-          <input id="email" type="email" className="form-control"
-            value={email} onChange={e => setEmail(e.target.value)} required />
-        </div>
-        <div className="mb-3">
-          <label className="form-label" htmlFor="password">Password</label>
-          <input id="password" type="password" className="form-control"
-            value={password} onChange={e => setPassword(e.target.value)} required />
-        </div>
-        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-          {loading ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
+        <h1 className="auth-heading">Create your account</h1>
+        <p className="auth-subheading">Start shortening URLs in seconds</p>
 
-      <p className="mt-3 text-center text-muted small">
-        Already have an account? <Link to="/login">Sign in</Link>
-      </p>
+        {error && <div className="alert alert-danger" role="alert">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="username">Username</label>
+            <input id="username" type="text" className="form-control"
+              value={username} onChange={e => setUsername(e.target.value)} required autoFocus />
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="email">Email</label>
+            <input id="email" type="email" className="form-control"
+              value={email} onChange={e => setEmail(e.target.value)} required />
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="password">Password</label>
+            <input id="password" type="password" className="form-control"
+              value={password} onChange={e => setPassword(e.target.value)} required />
+          </div>
+          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+            {loading ? 'Creating account…' : 'Create account'}
+          </button>
+        </form>
+
+        <p className="auth-switch">
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
+      </div>
     </div>
   )
 }

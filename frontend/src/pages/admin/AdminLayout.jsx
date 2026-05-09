@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 export default function AdminLayout() {
@@ -11,51 +11,52 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="container mt-4" style={{ maxWidth: '1100px' }}>
-      {/* Top bar */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h1 className="mb-0">⚡ ZapLink <span className="text-muted fs-4">Admin</span></h1>
-          <span className="text-muted small">
-            Logged in as <strong>{user?.username}</strong>
-          </span>
+    <>
+      <header className="zl-navbar">
+        <div className="zl-navbar-inner">
+          <Link to="/dashboard" className="zl-brand">
+            <span>⚡</span>
+            <span>ZapLink</span>
+          </Link>
+          <div className="zl-navbar-right">
+            <NavLink to="/dashboard" className="zl-nav-link">My Dashboard</NavLink>
+            <span className="zl-nav-user">{user?.username}</span>
+            <button className="btn btn-secondary btn-sm" onClick={handleLogout}>Logout</button>
+          </div>
         </div>
-        <div className="d-flex gap-2">
-          <NavLink to="/dashboard" className="btn btn-outline-secondary btn-sm">
-            My Dashboard
-          </NavLink>
-          <button className="btn btn-outline-secondary btn-sm" onClick={handleLogout}>
-            Logout
-          </button>
+      </header>
+
+      <div className="zl-admin-top">
+        <div className="zl-page-header">
+          <h1 className="zl-page-title">Admin</h1>
+          <p className="zl-page-subtitle">Manage users, links, and view system reports.</p>
         </div>
+        <ul className="nav nav-tabs">
+          <li className="nav-item">
+            <NavLink
+              to="/admin/reports"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              Reports
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              Users
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink
+              to="/admin/links"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              Links
+            </NavLink>
+          </li>
+        </ul>
       </div>
 
-      {/* Tab nav */}
-      <ul className="nav nav-tabs mb-4">
-        <li className="nav-item">
-          <NavLink
-            to="/admin/reports"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Reports
-          </NavLink>
-        </li>
-        <li className="nav-item">
-          <NavLink
-            to="/admin/users"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Users
-          </NavLink>
-        </li>
-        <li className="nav-item">
-          <NavLink
-            to="/admin/links"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Links
-          </NavLink>
-        </li>
-      </ul>
-
       <Outlet />
-    </div>
+    </>
   )
 }

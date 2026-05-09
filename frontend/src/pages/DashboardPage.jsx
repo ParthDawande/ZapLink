@@ -113,171 +113,183 @@ export default function DashboardPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="container mt-5" style={{ maxWidth: '960px' }}>
+    <>
+      <header className="zl-navbar">
+        <div className="zl-navbar-inner">
+          <Link to="/dashboard" className="zl-brand">
+            <span>⚡</span>
+            <span>ZapLink</span>
+          </Link>
+          <div className="zl-navbar-right">
+            {user?.role === 'ADMIN' && (
+              <Link to="/admin" className="zl-nav-link">Admin</Link>
+            )}
+            <span className="zl-nav-user">{user?.username}</span>
+            <button className="btn btn-secondary btn-sm" onClick={handleLogout}>Logout</button>
+          </div>
+        </div>
+      </header>
 
-      {/* Top bar */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h1 className="mb-0">⚡ ZapLink</h1>
-          <span className="text-muted small">
-            Logged in as <strong>{user?.username}</strong>
-          </span>
+      <div className="zl-page">
+        <div className="zl-page-header">
+          <h1 className="zl-page-title">Your Links</h1>
+          <p className="zl-page-subtitle">Shorten, share, and track.</p>
         </div>
-        <div className="d-flex gap-2">
-          {user?.role === 'ADMIN' && (
-            <Link to="/admin" className="btn btn-sm btn-outline-primary">Admin</Link>
+
+        {/* Shorten card */}
+        <div className="zl-shorten-card">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label htmlFor="longUrl" className="form-label fw-semibold">Long URL</label>
+              <div className="zl-shorten-row">
+                <input id="longUrl" type="url" className="form-control"
+                  placeholder="https://example.com/very/long/url"
+                  value={longUrl} onChange={e => setLongUrl(e.target.value)} required />
+                <button type="submit" className="btn btn-primary" disabled={shortening}>
+                  {shortening ? 'Shortening…' : 'Shorten'}
+                </button>
+              </div>
+            </div>
+            <div className="mb-0">
+              <label htmlFor="expiresAt" className="form-label fw-semibold">
+                Expiry <span className="text-muted fw-normal">(optional)</span>
+              </label>
+              <input id="expiresAt" type="datetime-local" className="form-control"
+                value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+            </div>
+          </form>
+
+          {shortenError && (
+            <div className="alert alert-danger mt-3" role="alert">{shortenError}</div>
           )}
-          <button className="btn btn-outline-secondary btn-sm" onClick={handleLogout}>
-            Logout
-          </button>
+
+          {result && (
+            <div className="zl-result">
+              <a href={result.shortUrl} target="_blank" rel="noreferrer" className="zl-result-url">
+                {result.shortUrl}
+              </a>
+              <button type="button"
+                className={`btn btn-sm ${resultCopied ? 'btn-success' : 'btn-outline-secondary'}`}
+                onClick={handleResultCopy}>
+                {resultCopied ? '✓ Copied!' : 'Copy'}
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Links section */}
+        <section className="zl-links-section">
+          <div className="zl-section-header">
+            <h2 className="zl-section-title">All links</h2>
+            <span className="zl-section-count">{totalElements} total</span>
+          </div>
+
+          {linksError && (
+            <div className="alert alert-danger m-3" role="alert">{linksError}</div>
+          )}
+
+          {linksLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading…</span>
+              </div>
+            </div>
+          ) : totalElements === 0 ? (
+            <div className="zl-empty">
+              <p className="zl-empty-title">No links yet</p>
+              <p>Shorten one above to get started.</p>
+            </div>
+          ) : (
+            <>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead>
+                    <tr>
+                      <th>Short URL</th>
+                      <th>Original URL</th>
+                      <th>Clicks</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {links.map(link => (
+                      <tr key={link.id}>
+                        <td>
+                          <a href={link.shortUrl} target="_blank" rel="noreferrer"
+                            className="zl-short-code">
+                            {link.shortCode}
+                          </a>
+                        </td>
+                        <td>
+                          <span className="zl-long-url" title={link.longUrl}>
+                            {truncate(link.longUrl)}
+                          </span>
+                        </td>
+                        <td
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => navigate(`/links/${link.id}`)}
+                          title="View analytics">
+                          {link.clickCount}
+                        </td>
+                        <td><StatusBadge status={link.status} /></td>
+                        <td className="text-nowrap">{formatDate(link.createdAt)}</td>
+                        <td>
+                          <div className="zl-row-actions">
+                            <button
+                              className={`btn btn-sm ${copiedId === link.id ? 'btn-success' : 'btn-outline-secondary'}`}
+                              onClick={() => handleCopyLink(link.shortUrl, link.id)}>
+                              {copiedId === link.id ? 'Copied!' : 'Copy'}
+                            </button>
+                            <Link to={`/links/${link.id}`} className="btn btn-sm btn-outline-primary">
+                              View
+                            </Link>
+                            <button
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => setQrModalLink(link)}
+                              disabled={link.status !== 'active'}
+                              title={link.status !== 'active' ? 'Not available for expired/disabled links' : 'Show QR code'}>
+                              QR
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDelete(link.id)}>
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalPages > 1 && (
+                <nav aria-label="Links pagination" className="p-3">
+                  <ul className="pagination justify-content-center mb-0">
+                    <li className={`page-item ${page === 0 ? 'disabled' : ''}`}>
+                      <button className="page-link" onClick={() => setPage(p => p - 1)}
+                        disabled={page === 0}>
+                        Previous
+                      </button>
+                    </li>
+                    <li className="page-item disabled">
+                      <span className="page-link">Page {page + 1} of {totalPages}</span>
+                    </li>
+                    <li className={`page-item ${page >= totalPages - 1 ? 'disabled' : ''}`}>
+                      <button className="page-link" onClick={() => setPage(p => p + 1)}
+                        disabled={page >= totalPages - 1}>
+                        Next
+                      </button>
+                    </li>
+                  </ul>
+                </nav>
+              )}
+            </>
+          )}
+        </section>
       </div>
-
-      {/* Shorten form */}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label htmlFor="longUrl" className="form-label fw-semibold">Long URL</label>
-          <input id="longUrl" type="url" className="form-control"
-            placeholder="https://example.com/very/long/url"
-            value={longUrl} onChange={e => setLongUrl(e.target.value)} required />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="expiresAt" className="form-label fw-semibold">
-            Expiry <span className="text-muted fw-normal">(optional)</span>
-          </label>
-          <input id="expiresAt" type="datetime-local" className="form-control"
-            value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
-        </div>
-        <button type="submit" className="btn btn-primary" disabled={shortening}>
-          {shortening ? 'Shortening…' : 'Shorten'}
-        </button>
-      </form>
-
-      {shortenError && (
-        <div className="alert alert-danger mt-4" role="alert">{shortenError}</div>
-      )}
-
-      {result && (
-        <div className="mt-4 p-3 border rounded bg-light">
-          <p className="mb-2 text-muted small">Your short URL:</p>
-          <div className="d-flex align-items-center gap-2 flex-wrap">
-            <a href={result.shortUrl} target="_blank" rel="noreferrer" className="fs-5 text-break">
-              {result.shortUrl}
-            </a>
-            <button type="button"
-              className={`btn btn-sm ${resultCopied ? 'btn-success' : 'btn-outline-secondary'}`}
-              onClick={handleResultCopy}>
-              {resultCopied ? '✓ Copied!' : 'Copy'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Your Links section */}
-      <hr className="my-4" />
-      <h4 className="mb-3">Your Links</h4>
-
-      {linksError && (
-        <div className="alert alert-danger" role="alert">{linksError}</div>
-      )}
-
-      {linksLoading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading…</span>
-          </div>
-        </div>
-      ) : totalElements === 0 ? (
-        <p className="text-center text-muted py-5">No links yet — shorten one above!</p>
-      ) : (
-        <>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>Short URL</th>
-                  <th>Original URL</th>
-                  <th>Clicks</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {links.map(link => (
-                  <tr key={link.id}>
-                    <td>
-                      <a href={link.shortUrl} target="_blank" rel="noreferrer"
-                        className="text-decoration-none fw-medium">
-                        {link.shortCode}
-                      </a>
-                    </td>
-                    <td>
-                      <span title={link.longUrl} className="text-muted">
-                        {truncate(link.longUrl)}
-                      </span>
-                    </td>
-                    <td
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/links/${link.id}`)}
-                      title="View analytics">
-                      {link.clickCount}
-                    </td>
-                    <td><StatusBadge status={link.status} /></td>
-                    <td className="text-nowrap">{formatDate(link.createdAt)}</td>
-                    <td>
-                      <div className="d-flex gap-1">
-                        <button
-                          className={`btn btn-sm ${copiedId === link.id ? 'btn-success' : 'btn-outline-secondary'}`}
-                          onClick={() => handleCopyLink(link.shortUrl, link.id)}>
-                          {copiedId === link.id ? 'Copied!' : 'Copy'}
-                        </button>
-                        <Link to={`/links/${link.id}`} className="btn btn-sm btn-outline-primary">
-                          View
-                        </Link>
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => setQrModalLink(link)}
-                          disabled={link.status !== 'active'}
-                          title={link.status !== 'active' ? 'Not available for expired/disabled links' : 'Show QR code'}>
-                          QR
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDelete(link.id)}>
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <nav aria-label="Links pagination">
-              <ul className="pagination justify-content-center">
-                <li className={`page-item ${page === 0 ? 'disabled' : ''}`}>
-                  <button className="page-link" onClick={() => setPage(p => p - 1)}
-                    disabled={page === 0}>
-                    Previous
-                  </button>
-                </li>
-                <li className="page-item disabled">
-                  <span className="page-link">Page {page + 1} of {totalPages}</span>
-                </li>
-                <li className={`page-item ${page >= totalPages - 1 ? 'disabled' : ''}`}>
-                  <button className="page-link" onClick={() => setPage(p => p + 1)}
-                    disabled={page >= totalPages - 1}>
-                    Next
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          )}
-        </>
-      )}
 
       <QrCodeModal
         linkId={qrModalLink?.id}
@@ -285,6 +297,6 @@ export default function DashboardPage() {
         isOpen={qrModalLink !== null}
         onClose={() => setQrModalLink(null)}
       />
-    </div>
+    </>
   )
 }
