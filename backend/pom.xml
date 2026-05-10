@@ -121,6 +121,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- springdoc-openapi — Swagger UI at /swagger-ui.html, OpenAPI JSON at /v3/api-docs -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
         <!-- Thymeleaf — server-side HTML templates for the redirect error pages (404 / 410) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

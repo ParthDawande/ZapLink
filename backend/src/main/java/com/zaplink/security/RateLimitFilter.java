@@ -35,8 +35,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // Public paths (e.g. /{shortCode}) bypass rate limiting entirely.
-        if (!path.startsWith("/api/")) {
+        // Public paths (e.g. /{shortCode}) and Swagger UI assets bypass rate limiting entirely.
+        if (!path.startsWith("/api/")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")) {
             filterChain.doFilter(request, response);
             return;
         }

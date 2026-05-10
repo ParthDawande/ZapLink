@@ -8,6 +8,7 @@ import com.zaplink.exception.LinkNotFoundException;
 import com.zaplink.model.Link;
 import com.zaplink.repository.LinkRepository;
 import com.zaplink.util.ReservedShortCodes;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.net.URI;
 import java.time.LocalDateTime;
 
+@Hidden
 @Controller
 public class RedirectController {
 
